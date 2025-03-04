@@ -1,0 +1,137 @@
+name: Automation Workflow
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  schedule:
+    - cron: '0 */7 * * *'
+
+jobs:
+  build:
+    runs-on: self-hosted
+    env:
+      DOTNET_ROOT: ~/.dotnet
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+    - name: Setup .NET
+      run: |
+        mkdir -p ~/.dotnet
+        curl -L https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --version 7.0.404
+    - name: Check if SpecFlow.Plus.LivingDoc.CLI is installed
+      run: |
+        if ! dotnet tool list -g | grep -q "SpecFlow.Plus.LivingDoc.CLI"; then
+          echo "SpecFlow.Plus.LivingDoc.CLI is not installed. Installing..."
+          dotnet tool install --global SpecFlow.Plus.LivingDoc.CLI
+        else
+          echo "SpecFlow.Plus.LivingDoc.CLI is already installed."
+        fi
+
+      continue-on-error: true
+
+    - name: Change to project directory
+      run: |
+        cd /home/oracle/actions-runner/_work/DS/DS/bin/Debug/net7.0/Drivers/
+        chmod +x chromedriver
+        ls -l
+
+    - name: Restore dependencies
+      run: |
+        export DOTNET_ROOT=~/.dotnet
+        ~/.dotnet/dotnet restore
+
+    - name: Build
+      run: |
+        export DOTNET_ROOT=~/.dotnet
+        ~/.dotnet/dotnet build --no-restore
+
+  # Production-Test:
+  #   runs-on: self-hosted
+  #   needs: build
+  #   steps:
+  #   - name: Checkout Repository
+  #     uses: actions/checkout@v3
+  #   - name: Setup .NET
+  #     run: |
+  #       mkdir -p ~/.dotnet
+  #       curl -L https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --version 7.0.404
+  #   - name: Check if SpecFlow.Plus.LivingDoc.CLI is installed
+  #     run: |
+  #       if ! dotnet tool list -g | grep -q "SpecFlow.Plus.LivingDoc.CLI"; then
+  #         echo "SpecFlow.Plus.LivingDoc.CLI is not installed. Installing..."
+  #         dotnet tool install --global SpecFlow.Plus.LivingDoc.CLI
+  #       else
+  #         echo "SpecFlow.Plus.LivingDoc.CLI is already installed."
+  #       fi
+  #     continue-on-error: true
+  #   - name: Restore dependencies
+  #     run: |
+  #       export DOTNET_ROOT=~/.dotnet
+  #       ~/.dotnet/dotnet restore
+
+  #   - name: Change to project directory
+  #     run: |
+  #       cd /home/oracle/actions-runner/_work/DS/DS/bin/Debug/net7.0/Drivers/
+  #       chmod +x chromedriver
+  #       ls -l
+  #     continue-on-error: true
+
+  #   - name: Run Production Tests
+  #     id: Prodtest
+  #     run: |
+  #       export DOTNET_ROOT=~/.dotnet
+  #       ~/.dotnet/dotnet test --filter "Category=SD_Production & Category!=Api_Authorized_Customer"
+  #     continue-on-error: true
+
+
+
+  Stagging-Test:
+    runs-on: self-hosted
+    # needs: Production-Test
+    needs: build
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+    - name: Setup .NET
+      run: |
+        mkdir -p ~/.dotnet
+        curl -L https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --version 7.0.404
+    - name: Check if SpecFlow.Plus.LivingDoc.CLI is installed
+      run: |
+        if ! dotnet tool list -g | grep -q "SpecFlow.Plus.LivingDoc.CLI"; then
+          echo "SpecFlow.Plus.LivingDoc.CLI is not installed. Installing..."
+          dotnet tool install --global SpecFlow.Plus.LivingDoc.CLI
+        else
+          echo "SpecFlow.Plus.LivingDoc.CLI is already installed."
+        fi
+      continue-on-error: true
+    - name: Restore dependencies
+      run: |
+        export DOTNET_ROOT=~/.dotnet
+        ~/.dotnet/dotnet restore
+
+    - name: Change to project directory
+      run: |
+        cd /home/oracle/actions-runner/_work/DS/DS/bin/Debug/net7.0/Drivers/
+        chmod +x chromedriver
+        ls -l
+  
+      continue-on-error: true
+    
+    - name: Run Stagging Tests
+      id: StagTest
+      run: |
+        export DOTNET_ROOT=~/.dotnet
+        ~/.dotnet/dotnet test --filter "Category=SD_Stagging & Category!=Api_Authorized_Customer"
+      continue-on-error: true
+  
+  API-Testing:
+    runs-on: self-hosted
+    needs: Stagging-Test
+    steps:
+    - name: Run API Tests
+      id: APITest
+      run: |
+        export DOTNET_ROOT=~/.dotnet
+        ~/.dotnet/dotnet test --filter "Api_Authorized_Customer"
