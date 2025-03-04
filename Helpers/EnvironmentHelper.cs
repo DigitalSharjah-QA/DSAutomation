@@ -40,7 +40,7 @@ namespace SD.Helpers
         public static string TestrailUsername="fayez.alibrahim@sdo.shj.ae";
         public static string TestrailApiKey="Ly2ErI6FYf137bzcY0Wy-DiqrZMMz287GLHrwwmkK";
 
-        //public static string slackToken = "xoxb-4914961415651-6896615263586-FFNtvI8sXG50NxQOmGKDERv1";
+        
         public static string channel = "C06G7KZ23J6";
 
         public static string SandboxPaymentMethod = "4242424242424242";
