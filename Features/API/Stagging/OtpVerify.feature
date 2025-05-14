@@ -1,5 +1,5 @@
 @Api_Authorized_Customer  @SD_Stagging  @apiQa
-Feature: Valiodate OTP Service on Stagging
+Feature: TC001_Validate OTP Service on Stagging
 	As Guest User
 	I want Request OTP Then validate the otp
 	
